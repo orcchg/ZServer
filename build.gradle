@@ -1,0 +1,48 @@
+group 'zserver'
+version '1.0'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.5
+version = '1.0'
+jar {
+    manifest {
+        attributes 'Implementation-Title': 'Gradle Quickstart',
+                'Implementation-Version': version,
+                'Main-Class': 'com.orcchg.zufuturo.server.ServerMain'
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    final RXJAVA_VERSION = "1.1.0"
+
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    testCompile 'junit:junit:4.12'
+
+    compile "io.reactivex:rxjava:$RXJAVA_VERSION"
+
+    compile 'com.google.code.gson:gson:2.4'
+
+    runtime 'org.postgresql:postgresql:9.4-1206-jdbc42'
+    //compile files('./libs/postgresql-9.4.1208.jar')
+
+    compile 'org.apache.httpcomponents:httpclient:4.5.2'
+
+    compile 'com.jakewharton.timber:timber:4.1.1'
+}
+
+test {
+    systemProperties 'property': 'value'
+}
+
+uploadArchives {
+    repositories {
+        flatDir {
+            dirs 'repos'
+        }
+    }
+}
