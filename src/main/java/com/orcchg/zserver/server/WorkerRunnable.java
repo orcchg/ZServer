@@ -54,7 +54,8 @@ public class WorkerRunnable implements Runnable {
                     }
                 }
 
-                System.out.println("Request: " + request.getRequestLine().getUri());
+                String requestString = "Request: " + request.getRequestLine().getUri();
+                System.out.println(requestString);
                 String authority = request.getFirstHeader("Host").getValue();
                 if (contentStream != null) {
                     String body = IOUtils.toString(contentStream, "UTF-8");
@@ -81,7 +82,9 @@ public class WorkerRunnable implements Runnable {
                 }
 
                 long time = System.currentTimeMillis();
-                output.write(("HTTP/1.1 200 OK\nWorkerRunnable: " + mServerText + " - " + time + "\n\n").getBytes());
+                output.write(("HTTP/1.1 200 OK\r\nWorkerRunnable: " + mServerText + " - " + time + "\r\n\r\n").getBytes());
+                output.write(requestString.getBytes());
+                output.write("\r\n".getBytes());
                 if (entities != null) {
                     for (String entity : entities) {
                         output.write(entity.getBytes());
