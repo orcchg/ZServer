@@ -6,6 +6,7 @@ import rx.Observable;
 
 public interface DataProvider {
 
+    Observable<String> addCustomer(Customer customer);
     Observable<Customer> getCustomers(int limit, int offset);
     Observable<Address> getAddress(int addressId);
 }

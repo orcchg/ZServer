@@ -1,9 +1,13 @@
 package com.orcchg.zserver.server;
 
 import com.google.gson.Gson;
+import com.orcchg.zserver.model.Customer;
 import com.orcchg.zserver.utility.Utility;
+import org.apache.commons.io.IOUtils;
 import rx.Observable;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.List;
@@ -17,7 +21,7 @@ class Backend {
         }
     };
 
-    static Observable<String> invokeMethod(DataProvider dataProvider, URL url)
+    static Observable<String> invokeMethod(DataProvider dataProvider, URL url, InputStream bodyStream)
             throws UnsupportedEncodingException, NoSuchMethodException {
         String path = url.getPath();
         Gson gson = new Gson();
@@ -25,6 +29,14 @@ class Backend {
 
         params = Utility.splitQuery(url);
         switch (path) {
+            case "/customer/add/":
+                try {
+                    String json = IOUtils.toString(bodyStream, "UTF-8");
+                    Customer customer = gson.fromJson(json, Customer.class);
+                    return dataProvider.addCustomer(customer);
+                } catch (IOException exception) {
+                    return Observable.just(Utility.messageJson(exception.getMessage()));
+                }
             case "/customers/":
                 int limit = Integer.parseInt(params.get("limit").get(0));
                 int offset = Integer.parseInt(params.get("offset").get(0));

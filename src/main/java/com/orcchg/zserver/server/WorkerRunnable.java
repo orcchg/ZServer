@@ -29,14 +29,13 @@ class WorkerRunnable implements Runnable {
         try {
             InputStream input = mClientSocket.getInputStream();
             OutputStream output = mClientSocket.getOutputStream();
-            output.write(("HTTP/1.1 200 OK\r\nWorkerRunnable: " + mServerText + " - " + System.currentTimeMillis() + "\r\n\r\n").getBytes());
 
             Pair<HttpRequest, InputStream> requestWithBody = Utility.getRequestFromConnection(input);
             HttpRequest request = requestWithBody.getKey();
             InputStream bodyStream = requestWithBody.getValue();
 
             URL url = new URL("http://" + request.getFirstHeader("Host").getValue() + request.getRequestLine().getUri());
-            Backend.invokeMethod(mDbHelper, url)
+            Backend.invokeMethod(mDbHelper, url, bodyStream)
                     .subscribeOn(Schedulers.io())
                     .observeOn(Schedulers.immediate())
                     .subscribe(new Subscriber<String>() {
@@ -44,6 +43,7 @@ class WorkerRunnable implements Runnable {
                         public void onCompleted() {
                             System.out.println("Request processed: " + System.currentTimeMillis());
                             try {
+                                output.write(("HTTP/1.1 200 OK\r\n\r\n").getBytes());
                                 input.close();
                                 output.close();
                             } catch (IOException e) {
@@ -52,8 +52,13 @@ class WorkerRunnable implements Runnable {
                         }
 
                         @Override
-                        public void onError(Throwable e) {
-                            e.printStackTrace();
+                        public void onError(Throwable error) {
+                            error.printStackTrace();
+                            try {
+                                output.write(("HTTP/1.1 500 Internal Server Error\r\n\r\n").getBytes());
+                            } catch (IOException exception) {
+                                exception.printStackTrace();
+                            }
                         }
 
                         @Override

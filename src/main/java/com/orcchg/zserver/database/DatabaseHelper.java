@@ -3,6 +3,7 @@ package com.orcchg.zserver.database;
 import com.orcchg.zserver.model.Address;
 import com.orcchg.zserver.model.Customer;
 import com.orcchg.zserver.server.DataProvider;
+import com.orcchg.zserver.utility.Utility;
 import rx.Observable;
 
 import java.sql.*;
@@ -52,6 +53,46 @@ public class DatabaseHelper implements DataProvider {
         return builder.toString();
     }
 
+    @Override
+    public Observable<String> addCustomer(Customer customer) {
+        Statement statement;
+        Connection connection;
+        try {
+            connection = DriverManager.getConnection(URL_DATABASE_DVDRENTAL, mProperties);
+            String query = "INSERT INTO customer (" +
+                    "customer_id," +
+                    "store_id," +
+                    "first_name," +
+                    "last_name," +
+                    "email," +
+                    "address_id," +
+                    "activebool," +
+                    "create_date," +
+                    "last_update," +
+                    "active) " +
+                    "VALUES (" +
+                    customer.getCustomerId() + "," +
+                    customer.getStoreId() + "," +
+                    customer.getFirstName() + "," +
+                    customer.getLastName() + "," +
+                    customer.getEmail() + "," +
+                    customer.getAddressId() + "," +
+                    customer.isIsActive() + "," +
+                    customer.getCreateDate() + "," +
+                    customer.getLastUpdate() + "," +
+                    customer.getActive() + ") RETURNING customer_id;";
+
+            statement = connection.createStatement();
+            statement.executeQuery(query);
+            statement.close();
+            connection.close();
+        } catch (SQLException exception) {
+            exception.printStackTrace();
+            return Observable.just(Utility.messageJson(exception.getMessage()));
+        }
+        return Observable.just(Utility.messageJson("success"));
+    }
+
     /**
      * GET /customers/?limit={@param limit}&offset={@param offset}
      */
@@ -88,49 +129,6 @@ public class DatabaseHelper implements DataProvider {
                 subscriber.onCompleted();
             }
         });
-    }
-
-    public int addCustomer(Customer customer) {
-        Statement statement;
-        Connection connection;
-        int lastId = -1;
-        try {
-            connection = DriverManager.getConnection(URL_DATABASE_DVDRENTAL, mProperties);
-            String query = "INSERT INTO customer (" +
-                    "customer_id," +
-                    "store_id," +
-                    "first_name," +
-                    "last_name," +
-                    "email," +
-                    "address_id," +
-                    "activebool," +
-                    "create_date," +
-                    "last_update," +
-                    "active) " +
-                    "VALUES (" +
-                    "DEFAULT," +
-                    "DEFAULT," +
-                    customer.getFirstName() + "," +
-                    customer.getLastName() + "," +
-                    customer.getEmail() + "," +
-                    "DEFAULT," +
-                    "DEFAULT," +
-                    "DEFAULT," +
-                    "DEFAULT," +
-                    "DEFAULT) RETURNING customer_id;";
-
-            statement = connection.createStatement();
-            ResultSet result = statement.executeQuery(query);
-            while (result.next()) {
-                lastId = result.getInt("customer_id");
-            }
-            statement.close();
-            connection.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-        }
-        return lastId;
     }
 
     /**

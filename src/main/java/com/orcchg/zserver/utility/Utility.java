@@ -46,6 +46,10 @@ public class Utility {
         return query_pairs;
     }
 
+    public static String messageJson(String message) {
+        return new StringBuilder("{\"message\":\"" + message + "\"}").toString();
+    }
+
     /* Internal */
     // ------------------------------------------------------------------------
     private static InputStream getRequestBodyStream(HttpRequest request, SessionInputBufferImpl buffer) throws HttpException {
