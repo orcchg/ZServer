@@ -73,15 +73,16 @@ public class DatabaseHelper implements DataProvider {
                     "VALUES (" +
                     customer.getCustomerId() + "," +
                     customer.getStoreId() + "," +
-                    customer.getFirstName() + "," +
-                    customer.getLastName() + "," +
-                    customer.getEmail() + "," +
+                    "\'" + customer.getFirstName() + "\'," +
+                    "\'" + customer.getLastName() + "\'," +
+                    "\'" + customer.getEmail() + "\'," +
                     customer.getAddressId() + "," +
-                    customer.isIsActive() + "," +
-                    customer.getCreateDate() + "," +
-                    customer.getLastUpdate() + "," +
+                    (customer.isIsActive() ? "true" : "false") + "," +
+                    "\'" + customer.getCreateDate() + "\'," +
+                    "\'" + customer.getLastUpdate() + "\'," +
                     customer.getActive() + ") RETURNING customer_id;";
 
+            System.out.println(query);
             statement = connection.createStatement();
             statement.executeQuery(query);
             statement.close();

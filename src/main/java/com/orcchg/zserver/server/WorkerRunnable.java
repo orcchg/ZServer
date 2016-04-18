@@ -29,6 +29,7 @@ class WorkerRunnable implements Runnable {
         try {
             InputStream input = mClientSocket.getInputStream();
             OutputStream output = mClientSocket.getOutputStream();
+            output.write(("HTTP/1.1 200 OK\r\n").getBytes());
 
             Pair<HttpRequest, InputStream> requestWithBody = Utility.getRequestFromConnection(input);
             HttpRequest request = requestWithBody.getKey();
@@ -43,7 +44,6 @@ class WorkerRunnable implements Runnable {
                         public void onCompleted() {
                             System.out.println("Request processed: " + System.currentTimeMillis());
                             try {
-                                output.write(("HTTP/1.1 200 OK\r\n\r\n").getBytes());
                                 input.close();
                                 output.close();
                             } catch (IOException e) {
@@ -54,11 +54,6 @@ class WorkerRunnable implements Runnable {
                         @Override
                         public void onError(Throwable error) {
                             error.printStackTrace();
-                            try {
-                                output.write(("HTTP/1.1 500 Internal Server Error\r\n\r\n").getBytes());
-                            } catch (IOException exception) {
-                                exception.printStackTrace();
-                            }
                         }
 
                         @Override
@@ -66,7 +61,6 @@ class WorkerRunnable implements Runnable {
                             try {
                                 output.write("\r\n".getBytes());
                                 output.write(entity.getBytes());
-                                output.write("\r\n".getBytes());
                             } catch (IOException e) {
                                 onError(e);
                             }

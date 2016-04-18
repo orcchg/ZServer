@@ -27,7 +27,6 @@ class Backend {
         Gson gson = new Gson();
         Map<String, List<String>> params;
 
-        params = Utility.splitQuery(url);
         switch (path) {
             case "/customer/add/":
                 try {
@@ -38,10 +37,12 @@ class Backend {
                     return Observable.just(Utility.messageJson(exception.getMessage()));
                 }
             case "/customers/":
+                params = Utility.splitQuery(url);
                 int limit = Integer.parseInt(params.get("limit").get(0));
                 int offset = Integer.parseInt(params.get("offset").get(0));
                 return dataProvider.getCustomers(limit, offset).map(gson::toJson);
             case "/address/":
+                params = Utility.splitQuery(url);
                 int addressId = Integer.parseInt(params.get("address_id").get(0));
                 return dataProvider.getAddress(addressId).map(gson::toJson);
         }
