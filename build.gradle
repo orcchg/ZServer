@@ -30,6 +30,7 @@ dependencies {
     runtime 'org.postgresql:postgresql:9.4-1206-jdbc42'
     //compile files('./libs/postgresql-9.4.1208.jar')
 
+    compile 'commons-io:commons-io:2.4'
     compile 'org.apache.httpcomponents:httpclient:4.5.2'
 
     compile 'com.jakewharton.timber:timber:4.1.1'
