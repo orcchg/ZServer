@@ -2,12 +2,13 @@ package com.orcchg.zserver.database;
 
 import com.orcchg.zserver.model.Address;
 import com.orcchg.zserver.model.Customer;
+import com.orcchg.zserver.server.DataProvider;
 import rx.Observable;
 
 import java.sql.*;
 import java.util.Properties;
 
-public class DatabaseHelper {
+public class DatabaseHelper implements DataProvider {
     private static final String URL_DATABASE_DVDRENTAL = "jdbc:postgresql:dvdrental";
 
     private Properties mProperties;
@@ -54,6 +55,7 @@ public class DatabaseHelper {
     /**
      * GET /customers/?limit={@param limit}&offset={@param offset}
      */
+    @Override
     public Observable<Customer> getCustomers(int limit, int offset) {
         return Observable.create(subscriber -> {
             Statement statement = null;
@@ -134,6 +136,7 @@ public class DatabaseHelper {
     /**
      * GET /address/?address_id={@param addressId}/
      */
+    @Override
     public Observable<Address> getAddress(int addressId) {
         return Observable.create(subscriber -> {
             Statement statement = null;

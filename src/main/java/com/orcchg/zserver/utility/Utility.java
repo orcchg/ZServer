@@ -1,5 +1,15 @@
 package com.orcchg.zserver.utility;
 
+import javafx.util.Pair;
+import org.apache.http.HttpEntityEnclosingRequest;
+import org.apache.http.HttpException;
+import org.apache.http.HttpRequest;
+import org.apache.http.entity.ContentLengthStrategy;
+import org.apache.http.impl.entity.StrictContentLengthStrategy;
+import org.apache.http.impl.io.*;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -9,6 +19,17 @@ import java.util.List;
 import java.util.Map;
 
 public class Utility {
+
+    public static Pair<HttpRequest, InputStream> getRequestFromConnection(InputStream input)
+            throws IOException, HttpException {
+        HttpTransportMetricsImpl metrics = new HttpTransportMetricsImpl();
+        SessionInputBufferImpl buffer = new SessionInputBufferImpl(metrics, 2048);
+        buffer.bind(input);
+        DefaultHttpRequestParser parser = new DefaultHttpRequestParser(buffer);
+        HttpRequest request = parser.parse();
+        InputStream bodyStream = getRequestBodyStream(request, buffer);
+        return new Pair<>(request, bodyStream);
+    }
 
     public static Map<String, List<String>> splitQuery(URL url) throws UnsupportedEncodingException {
         final Map<String, List<String>> query_pairs = new LinkedHashMap<>();
@@ -23,5 +44,23 @@ public class Utility {
             query_pairs.get(key).add(value);
         }
         return query_pairs;
+    }
+
+    /* Internal */
+    // ------------------------------------------------------------------------
+    private static InputStream getRequestBodyStream(HttpRequest request, SessionInputBufferImpl buffer) throws HttpException {
+        InputStream contentStream = null;
+        if (request instanceof HttpEntityEnclosingRequest) {
+            ContentLengthStrategy contentLengthStrategy = StrictContentLengthStrategy.INSTANCE;
+            long len = contentLengthStrategy.determineLength(request);
+            if (len == ContentLengthStrategy.CHUNKED) {
+                contentStream = new ChunkedInputStream(buffer);
+            } else if (len == ContentLengthStrategy.IDENTITY) {
+                contentStream = new IdentityInputStream(buffer);
+            } else {
+                contentStream = new ContentLengthInputStream(buffer, len);
+            }
+        }
+        return contentStream;
     }
 }
