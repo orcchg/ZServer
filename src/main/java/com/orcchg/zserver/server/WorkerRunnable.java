@@ -1,6 +1,7 @@
 package com.orcchg.zserver.server;
 
 import com.orcchg.zserver.database.DatabaseHelper;
+import com.orcchg.zserver.utility.Utility;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpException;
@@ -13,7 +14,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.URL;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 
 public class WorkerRunnable implements Runnable {
     protected Socket mClientSocket = null;
@@ -30,7 +34,6 @@ public class WorkerRunnable implements Runnable {
         try {
             InputStream input  = mClientSocket.getInputStream();
             OutputStream output = mClientSocket.getOutputStream();
-            String result = "";
             try {
                 HttpTransportMetricsImpl metrics = new HttpTransportMetricsImpl();
                 SessionInputBufferImpl buffer = new SessionInputBufferImpl(metrics, 2048);
@@ -52,23 +55,49 @@ public class WorkerRunnable implements Runnable {
                 }
 
                 System.out.println("Request: " + request.getRequestLine().getUri());
+                String authority = request.getFirstHeader("Host").getValue();
                 if (contentStream != null) {
                     String body = IOUtils.toString(contentStream, "UTF-8");
                     System.out.println("Body: " + body);
                 }
-                result = mDbHelper.testQuery();
-                System.out.println("Result: " + result.length());
+
+                URL url = new URL("http://" + authority + request.getRequestLine().getUri());
+                String path = url.getPath();
+                Map<String, List<String>> params;
+
+                List<String> entities = null;
+                switch (path) {
+                    case "/customer/":
+                        params = Utility.splitQuery(url);
+                        int limit = Integer.parseInt(params.get("limit").get(0));
+                        int offset = Integer.parseInt(params.get("offset").get(0));
+                        entities = mDbHelper.getCustomers(limit, offset);
+                        break;
+                    case "/address/":
+                        params =Utility.splitQuery(url);
+                        int addressId = Integer.parseInt(params.get("address_id").get(0));
+                        entities = mDbHelper.getAddress(addressId);
+                        break;
+                }
+
+                long time = System.currentTimeMillis();
+                output.write(("HTTP/1.1 200 OK\nWorkerRunnable: " + mServerText + " - " + time + "\n\n").getBytes());
+                if (entities != null) {
+                    for (String entity : entities) {
+                        output.write(entity.getBytes());
+                        output.write("\r\n".getBytes());
+                    }
+                }
+                System.out.println("Request processed: " + time);
+
             } catch (SQLException e) {
                 e.printStackTrace();
             } catch (HttpException e) {
                 e.printStackTrace();
             }
-            long time = System.currentTimeMillis();
-            output.write(("HTTP/1.1 200 OK\n\nWorkerRunnable: " + mServerText + " - " + time + "").getBytes());
-            output.write(result.getBytes());
+
             output.close();
             input.close();
-            System.out.println("Request processed: " + time);
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -63,7 +63,7 @@ public class DatabaseHelper {
             statement = connection.createStatement();
             ResultSet result = statement.executeQuery(query);
             while (result.next()) {
-                String customer = new StringBuilder(result.getString("custemr_id"))
+                String customer = new StringBuilder(result.getString("customer_id"))
                         .append(" ").append(result.getString("first_name"))
                         .append(" ").append(result.getString("last_name"))
                         .append(" ").append(result.getString("email"))
