@@ -48,7 +48,6 @@ public class DatabaseHelper implements DataProvider {
             connection.close();
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
         }
         return builder.toString();
     }

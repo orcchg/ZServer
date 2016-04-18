@@ -6,7 +6,7 @@ import java.util.Properties;
 public class DbQueryTest {
     private static final String URL_DATABASE_DVDRENTAL = "jdbc:postgresql:dvdrental";
 
-    public void testConnection() {
+    void testConnection() {
         System.out.println("Enter testConnection()");
 
         try {

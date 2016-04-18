@@ -1,6 +1,5 @@
 package com.orcchg.zserver.utility;
 
-import javafx.util.Pair;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;

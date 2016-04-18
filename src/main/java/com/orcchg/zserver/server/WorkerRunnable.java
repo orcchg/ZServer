@@ -1,8 +1,8 @@
 package com.orcchg.zserver.server;
 
 import com.orcchg.zserver.database.DatabaseHelper;
+import com.orcchg.zserver.utility.Pair;
 import com.orcchg.zserver.utility.Utility;
-import javafx.util.Pair;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import rx.Subscriber;
@@ -17,12 +17,10 @@ import java.net.URL;
 class WorkerRunnable implements Runnable {
     private Socket mClientSocket = null;
     private DatabaseHelper mDbHelper;
-    private String mServerText = null;
 
-    WorkerRunnable(Socket clientSocket, DatabaseHelper dbHelper, String serverText) {
+    WorkerRunnable(Socket clientSocket, DatabaseHelper dbHelper) {
         mClientSocket = clientSocket;
         mDbHelper = dbHelper;
-        mServerText = serverText;
     }
 
     public void run() {
@@ -66,8 +64,10 @@ class WorkerRunnable implements Runnable {
                             }
                         }
                     });
-        } catch (IOException | HttpException | Backend.NoSuchMethodException exception) {
+        } catch (IOException | HttpException exception) {
             exception.printStackTrace();
+        } catch (Backend.NoSuchMethodException exception) {
+            System.out.println("No such method: " + exception.getMessage());
         }
     }
 }

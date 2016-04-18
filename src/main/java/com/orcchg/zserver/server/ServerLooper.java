@@ -8,25 +8,21 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class ServerLooper implements Runnable {
-    protected DatabaseHelper mDbHelper;
+class ServerLooper implements Runnable {
+    private DatabaseHelper mDbHelper;
 
-    protected int mServerPort = 8080;
-    protected ServerSocket mServerSocket = null;
+    private int mServerPort = 8080;
+    private ServerSocket mServerSocket = null;
 
-    protected boolean mIsStopped = false;
-    protected Thread mWorkerThread = null;
-    protected ExecutorService mThreadPool = Executors.newFixedThreadPool(10);
+    private boolean mIsStopped = false;
+    private ExecutorService mThreadPool = Executors.newFixedThreadPool(10);
 
-    public ServerLooper(int port) {
+    ServerLooper(int port) {
         mDbHelper = new DatabaseHelper();
         mServerPort = port;
     }
 
     public void run() {
-        synchronized(this) {
-            mWorkerThread = Thread.currentThread();
-        }
         init();
         loop();
         mThreadPool.shutdown();
@@ -37,7 +33,7 @@ public class ServerLooper implements Runnable {
         return mIsStopped;
     }
 
-    public synchronized void stop() {
+    synchronized void stop() {
         mIsStopped = true;
         try {
             mServerSocket.close();
@@ -62,9 +58,10 @@ public class ServerLooper implements Runnable {
 
     private void loop() {
         while (!isStopped()) {
-            Socket clientSocket = null;
+            Socket clientSocket;
             try {
                 clientSocket = mServerSocket.accept();
+                System.out.println("Accepted incoming connection: " + clientSocket.getInetAddress().getHostAddress());
             } catch (IOException e) {
                 if (isStopped()) {
                     System.out.println("Server Stopped.") ;
@@ -72,7 +69,7 @@ public class ServerLooper implements Runnable {
                 }
                 throw new RuntimeException("Error accepting client connection", e);
             }
-            mThreadPool.execute(new WorkerRunnable(clientSocket, mDbHelper, "Thread Pooled Server"));
+            mThreadPool.execute(new WorkerRunnable(clientSocket, mDbHelper));
         }
     }
 }

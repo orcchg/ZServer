@@ -19,7 +19,7 @@ class Backend {
         NoSuchMethodException(String message) {
             super(message);
         }
-    };
+    }
 
     static Observable<String> invokeMethod(DataProvider dataProvider, URL url, InputStream bodyStream)
             throws UnsupportedEncodingException, NoSuchMethodException {
