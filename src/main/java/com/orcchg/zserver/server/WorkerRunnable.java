@@ -1,5 +1,6 @@
 package com.orcchg.zserver.server;
 
+import com.google.gson.Gson;
 import com.orcchg.zserver.database.DatabaseHelper;
 import com.orcchg.zserver.utility.Utility;
 import org.apache.commons.io.IOUtils;
@@ -9,22 +10,23 @@ import org.apache.http.HttpRequest;
 import org.apache.http.entity.ContentLengthStrategy;
 import org.apache.http.impl.entity.StrictContentLengthStrategy;
 import org.apache.http.impl.io.*;
+import rx.Subscriber;
+import rx.schedulers.Schedulers;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.URL;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-public class WorkerRunnable implements Runnable {
-    protected Socket mClientSocket = null;
-    protected DatabaseHelper mDbHelper;
-    protected String mServerText = null;
+class WorkerRunnable implements Runnable {
+    private Socket mClientSocket = null;
+    private DatabaseHelper mDbHelper;
+    private String mServerText = null;
 
-    public WorkerRunnable(Socket clientSocket, DatabaseHelper dbHelper, String serverText) {
+    WorkerRunnable(Socket clientSocket, DatabaseHelper dbHelper, String serverText) {
         mClientSocket = clientSocket;
         mDbHelper = dbHelper;
         mServerText = serverText;
@@ -66,41 +68,64 @@ public class WorkerRunnable implements Runnable {
                 String path = url.getPath();
                 Map<String, List<String>> params;
 
-                List<String> entities = null;
+                Gson gson = new Gson();
+                Subscriber<String> subscriber = new Subscriber<String>() {
+                    @Override
+                    public void onCompleted() {
+                        System.out.println("Request processed: " + System.currentTimeMillis());
+                        try {
+                            input.close();
+                            output.close();
+                        } catch (IOException e) {
+                            onError(e);
+                        }
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        e.printStackTrace();
+                    }
+
+                    @Override
+                    public void onNext(String s) {
+                        try {
+                            output.write("\r\n".getBytes());
+                            output.write(s.getBytes());
+                            output.write("\r\n".getBytes());
+                        } catch (IOException e) {
+                            onError(e);
+                        }
+                    }
+                };
+
+                long time = System.currentTimeMillis();
+                output.write(("HTTP/1.1 200 OK\r\nWorkerRunnable: " + mServerText + " - " + time + "\r\n\r\n").getBytes());
+                output.write(requestString.getBytes());
+
                 switch (path) {
                     case "/customer/":
                         params = Utility.splitQuery(url);
                         int limit = Integer.parseInt(params.get("limit").get(0));
                         int offset = Integer.parseInt(params.get("offset").get(0));
-                        entities = mDbHelper.getCustomers(limit, offset);
+                        mDbHelper.getCustomers(limit, offset)
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(Schedulers.immediate())
+                                .map(gson::toJson)
+                                .subscribe(subscriber);
                         break;
                     case "/address/":
                         params =Utility.splitQuery(url);
                         int addressId = Integer.parseInt(params.get("address_id").get(0));
-                        entities = mDbHelper.getAddress(addressId);
+                        mDbHelper.getAddress(addressId)
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(Schedulers.immediate())
+                                .map(gson::toJson)
+                                .subscribe(subscriber);
                         break;
                 }
-
-                long time = System.currentTimeMillis();
-                output.write(("HTTP/1.1 200 OK\r\nWorkerRunnable: " + mServerText + " - " + time + "\r\n\r\n").getBytes());
-                output.write(requestString.getBytes());
-                output.write("\r\n".getBytes());
-                if (entities != null) {
-                    for (String entity : entities) {
-                        output.write(entity.getBytes());
-                        output.write("\r\n".getBytes());
-                    }
-                }
-                System.out.println("Request processed: " + time);
-
-            } catch (SQLException e) {
-                e.printStackTrace();
             } catch (HttpException e) {
                 e.printStackTrace();
             }
-
-            output.close();
-            input.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
