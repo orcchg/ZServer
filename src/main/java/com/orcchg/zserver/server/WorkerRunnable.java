@@ -5,6 +5,8 @@ import com.orcchg.zserver.utility.Pair;
 import com.orcchg.zserver.utility.Utility;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import rx.Subscriber;
 import rx.schedulers.Schedulers;
 
@@ -15,6 +17,8 @@ import java.net.Socket;
 import java.net.URL;
 
 class WorkerRunnable implements Runnable {
+    private static Logger sLogger = LogManager.getLogger(WorkerRunnable.class);
+
     private Socket mClientSocket = null;
     private DatabaseHelper mDbHelper;
     private String mDelimiter = "";
@@ -41,7 +45,7 @@ class WorkerRunnable implements Runnable {
                     .subscribe(new Subscriber<String>() {
                         @Override
                         public void onCompleted() {
-                            System.out.println("Request processed: " + System.currentTimeMillis());
+                            sLogger.debug("Request processed: " + System.currentTimeMillis());
                             try {
                                 output.write("]".getBytes());
                                 input.close();
@@ -70,7 +74,7 @@ class WorkerRunnable implements Runnable {
         } catch (IOException | HttpException exception) {
             exception.printStackTrace();
         } catch (Backend.NoSuchMethodException exception) {
-            System.out.println("No such method: " + exception.getMessage());
+            sLogger.debug("No such method: " + exception.getMessage());
         }
     }
 }

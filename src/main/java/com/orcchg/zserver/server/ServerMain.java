@@ -1,6 +1,10 @@
 package com.orcchg.zserver.server;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class ServerMain {
+    private static Logger sLogger = LogManager.getLogger(ServerMain.class);
 
     public static void main(String[] args) {
         ServerLooper server = new ServerLooper(9000);
@@ -11,7 +15,7 @@ public class ServerMain {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        System.out.println("Stopping Server");
+        sLogger.debug("Stopping Server");
         server.stop();
     }
 }

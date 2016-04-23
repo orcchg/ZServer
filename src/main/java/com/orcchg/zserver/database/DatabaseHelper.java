@@ -4,6 +4,8 @@ import com.orcchg.zserver.model.Address;
 import com.orcchg.zserver.model.Customer;
 import com.orcchg.zserver.server.DataProvider;
 import com.orcchg.zserver.utility.Utility;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import rx.Observable;
 
 import java.sql.*;
@@ -11,6 +13,7 @@ import java.util.Properties;
 
 public class DatabaseHelper implements DataProvider {
     private static final String URL_DATABASE_DVDRENTAL = "jdbc:postgresql:dvdrental";
+    private static Logger sLogger = LogManager.getLogger(DatabaseHelper.class);
 
     private Properties mProperties;
 
@@ -37,7 +40,7 @@ public class DatabaseHelper implements DataProvider {
         Connection connection;
         try {
             connection = DriverManager.getConnection(URL_DATABASE_DVDRENTAL, mProperties);
-            System.out.println("database connected");
+            sLogger.debug("database connected");
             String query = "SELECT first_name,last_name FROM customer;";
             statement = connection.createStatement();
             ResultSet result = statement.executeQuery(query);
@@ -81,7 +84,7 @@ public class DatabaseHelper implements DataProvider {
                     "\'" + customer.getLastUpdate() + "\'," +
                     customer.getActive() + ") RETURNING customer_id;";
 
-            System.out.println(query);
+            sLogger.debug(query);
             statement = connection.createStatement();
             statement.executeQuery(query);
             statement.close();

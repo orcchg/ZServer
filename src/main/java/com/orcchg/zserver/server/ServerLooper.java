@@ -1,6 +1,8 @@
 package com.orcchg.zserver.server;
 
 import com.orcchg.zserver.database.DatabaseHelper;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -9,6 +11,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 class ServerLooper implements Runnable {
+    private static Logger sLogger = LogManager.getLogger(ServerLooper.class);
+
     private DatabaseHelper mDbHelper;
 
     private int mServerPort = 8080;
@@ -26,7 +30,7 @@ class ServerLooper implements Runnable {
         init();
         loop();
         mThreadPool.shutdown();
-        System.out.println("Server Stopped.") ;
+        sLogger.debug("Server Stopped."); ;
     }
 
     private synchronized boolean isStopped() {
@@ -61,10 +65,10 @@ class ServerLooper implements Runnable {
             Socket clientSocket;
             try {
                 clientSocket = mServerSocket.accept();
-                System.out.println("Accepted incoming connection: " + clientSocket.getInetAddress().getHostAddress());
+                sLogger.debug("Accepted incoming connection: " + clientSocket.getInetAddress().getHostAddress());
             } catch (IOException e) {
                 if (isStopped()) {
-                    System.out.println("Server Stopped.") ;
+                    sLogger.debug("Server Stopped.") ;
                     break;
                 }
                 throw new RuntimeException("Error accepting client connection", e);
