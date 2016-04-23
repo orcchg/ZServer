@@ -17,6 +17,7 @@ import java.net.URL;
 class WorkerRunnable implements Runnable {
     private Socket mClientSocket = null;
     private DatabaseHelper mDbHelper;
+    private String mDelimiter = "";
 
     WorkerRunnable(Socket clientSocket, DatabaseHelper dbHelper) {
         mClientSocket = clientSocket;
@@ -27,7 +28,7 @@ class WorkerRunnable implements Runnable {
         try {
             InputStream input = mClientSocket.getInputStream();
             OutputStream output = mClientSocket.getOutputStream();
-            output.write(("HTTP/1.1 200 OK\r\n").getBytes());
+            output.write(("HTTP/1.1 200 OK\r\n\r\n[").getBytes());
 
             Pair<HttpRequest, InputStream> requestWithBody = Utility.getRequestFromConnection(input);
             HttpRequest request = requestWithBody.getKey();
@@ -42,6 +43,7 @@ class WorkerRunnable implements Runnable {
                         public void onCompleted() {
                             System.out.println("Request processed: " + System.currentTimeMillis());
                             try {
+                                output.write("]".getBytes());
                                 input.close();
                                 output.close();
                             } catch (IOException e) {
@@ -57,8 +59,9 @@ class WorkerRunnable implements Runnable {
                         @Override
                         public void onNext(String entity) {
                             try {
-                                output.write("\r\n".getBytes());
+                                output.write(mDelimiter.getBytes());
                                 output.write(entity.getBytes());
+                                mDelimiter = ",";
                             } catch (IOException e) {
                                 onError(e);
                             }
