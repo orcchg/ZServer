@@ -23,7 +23,7 @@ public class DatabaseHelper implements DataProvider {
 
         mProperties = new Properties();
         mProperties.setProperty("user", "postgres");
-        mProperties.setProperty("password", "111222qqq");
+        mProperties.setProperty("password", DatabaseAuth.retrievePassword());
     }
 
     /* API */
