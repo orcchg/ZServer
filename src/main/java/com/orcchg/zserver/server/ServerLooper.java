@@ -5,6 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
@@ -65,7 +66,10 @@ class ServerLooper implements Runnable {
             Socket clientSocket;
             try {
                 clientSocket = mServerSocket.accept();
-                sLogger.debug("Accepted incoming connection: " + clientSocket.getInetAddress().getHostAddress());
+                String host = clientSocket.getInetAddress().getHostAddress();
+                sLogger.debug("Accepted incoming connection: " + host);
+                OutputStream output = clientSocket.getOutputStream();
+                output.write(("Accepted connection from " + host).getBytes());
             } catch (IOException e) {
                 if (isStopped()) {
                     sLogger.debug("Server Stopped.") ;
