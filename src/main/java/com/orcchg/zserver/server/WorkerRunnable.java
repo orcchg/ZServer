@@ -33,26 +33,14 @@ class WorkerRunnable implements Runnable {
 
     public void run() {
         try {
-            int rawOffset = -8 * 60 * 60 * 1000;
-            String[] ids = TimeZone.getAvailableIDs(rawOffset);
-            TimeZone timeZone = new SimpleTimeZone(rawOffset, ids[0]);
-            DateTime now = DateTime.now(timeZone);
-            String dateTime = now.format("YYYY-MM-DD hh:mm:ss");
-
             InputStream input = mClientSocket.getInputStream();
             OutputStream output = mClientSocket.getOutputStream();
-            output.write("HTTP/1.1 200 OK\r\n".getBytes());
-            output.write(("Server: zserver-" + Utility.VERSION + "\r\n").getBytes());
-            output.write(("Date: " + dateTime + "\r\n").getBytes());
-            output.write("Content-Type: application/json\r\n".getBytes());
-            output.write(("Content-Length: " + 10000 + "\r\n").getBytes());
-            output.write("Connection: keep-alive\r\n".getBytes());
-            output.write("Accept-Ranges: bytes\r\n".getBytes());
-            output.write("\r\n[".getBytes());
 
             Pair<HttpRequest, InputStream> requestWithBody = Utility.getRequestFromConnection(input);
             HttpRequest request = requestWithBody.getKey();
             InputStream bodyStream = requestWithBody.getValue();
+
+            StringBuilder content = new StringBuilder(Utility.CONTENT_LIST_OPEN);
 
             URL url = new URL("http://" + request.getFirstHeader("Host").getValue() + request.getRequestLine().getUri());
             Backend.invokeMethod(mDbHelper, url, bodyStream)
@@ -62,11 +50,13 @@ class WorkerRunnable implements Runnable {
                         @Override
                         public void onCompleted() {
                             sLogger.debug("Request processed: " + System.currentTimeMillis());
+                            content.append(Utility.CONTENT_LIST_CLOSE);
                             try {
-                                output.write("]".getBytes());
+                                sendResponse(output, content.toString());
                                 input.close();
                                 output.close();
                             } catch (IOException e) {
+                                sLogger.error("IO exception during writing into output stream");
                                 onError(e);
                             }
                         }
@@ -78,19 +68,8 @@ class WorkerRunnable implements Runnable {
 
                         @Override
                         public void onNext(String entity) {
-                            try {
-                                output.write(mDelimiter.getBytes());
-                                output.write(entity.getBytes());
-                                mDelimiter = ",";
-                                try {
-                                    Thread.sleep(500);
-                                } catch (InterruptedException e) {
-                                    Thread.interrupted();
-                                    onError(e);
-                                }
-                            } catch (IOException e) {
-                                onError(e);
-                            }
+                            content.append(mDelimiter).append(entity);
+                            mDelimiter = ",";
                         }
                     });
         } catch (IOException | HttpException exception) {
@@ -98,5 +77,22 @@ class WorkerRunnable implements Runnable {
         } catch (Backend.NoSuchMethodException exception) {
             sLogger.debug("No such method: " + exception.getMessage());
         }
+    }
+
+    private void sendResponse(OutputStream output, String body) throws IOException {
+        int rawOffset = -8 * 60 * 60 * 1000;
+        String[] ids = TimeZone.getAvailableIDs(rawOffset);
+        TimeZone timeZone = new SimpleTimeZone(rawOffset, ids[0]);
+        DateTime now = DateTime.now(timeZone);
+        String dateTime = now.format("YYYY-MM-DD hh:mm:ss");
+
+        output.write("HTTP/1.1 200 OK\r\n".getBytes());
+        output.write(("Server: zserver-" + Utility.VERSION + "\r\n").getBytes());
+        output.write(("Date: " + dateTime + "\r\n").getBytes());
+        output.write("Content-Type: application/json\r\n".getBytes());
+        output.write(("Content-Length: " + body.length() + "\r\n").getBytes());
+        output.write("Connection: keep-alive\r\n".getBytes());
+        output.write("Accept-Ranges: bytes\r\n\r\n".getBytes());
+        output.write(body.getBytes());
     }
 }
