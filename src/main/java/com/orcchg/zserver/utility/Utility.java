@@ -19,6 +19,8 @@ import java.util.Map;
 
 public class Utility {
 
+    public static final String VERSION = "1.0";
+
     public static Pair<HttpRequest, InputStream> getRequestFromConnection(InputStream input)
             throws IOException, HttpException {
         HttpTransportMetricsImpl metrics = new HttpTransportMetricsImpl();
